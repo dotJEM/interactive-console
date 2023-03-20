@@ -2,6 +2,8 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using DotJEM.InteractiveConsole.Abstractions;
+using DotJEM.InteractiveConsole.Commands;
+using DotJEM.InteractiveConsole.Commands.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -25,51 +27,11 @@ public class InteractiveConsole : IInteractiveConsole
 
     public IOption<T> Options<T>(string message, params IOption<T>[] options)
     {
-        Console.WriteLine(message);
-
-        int selected = 0;
-        (int left, int top) = Console.GetCursorPosition();
-
-        while (true)
-        {
-            Console.SetCursorPosition(left, top);
-            for (int i = 0; i < options.Length; i++)
-            {
-                if (selected == i)
-                {
-                    Console.WriteLine($" → \u001b[32m{options[i].Label}\u001b[0m");
-                }
-                else
-                {
-                    Console.WriteLine($"   {options[i].Label}");
-                }
-
-            }
-
-            switch (Console.ReadKey(false).Key)
-            {
-                case ConsoleKey.UpArrow:
-                    selected = (selected + options.Length - 1) % options.Length;
-                    break;
-
-                case ConsoleKey.DownArrow:
-                    selected = (selected + options.Length + 1) % options.Length;
-                    break;
-
-                case ConsoleKey.Enter:
-                    return options[selected];
-            }
-
-        }
+        IConsoleCommand<IOption<T>> consoleCommand = new OptionsConsoleCommand<T>(new SystemConsoleProxy(), message, options);
+        return consoleCommand.Execute();
     }
 }
 
-public interface IOption<out TValue>
-{
-    TValue Value { get; }
-    string Label { get; }
-}
-public record struct Option<T>(T Value, string Label) : IOption<T>;
 
 public interface IInteractiveConsoleBuilder { }
 
